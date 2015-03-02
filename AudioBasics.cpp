@@ -352,7 +352,6 @@ void CAudioBasics::ProcessAudio() {
             float beamAngleDegrees = static_cast<float>((180.0 * beamAngle) / M_PI);
             float sourceAngleDegrees = static_cast<float>((180.0 * sourceAngle) / M_PI);
             m_pAudioPanel->SetBeam(beamAngleDegrees);
-            m_pAudioPanel->SetSoundSource(sourceAngleDegrees, static_cast<float>(sourceConfidence));
 
             DBOUT("Beam Angle: " << beamAngleDegrees << "\n");
             DBOUT("Source Angle: " << sourceAngleDegrees << "\n");

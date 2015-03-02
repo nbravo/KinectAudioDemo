@@ -12,9 +12,6 @@ AudioPanel::AudioPanel() :
     m_pBeamNeedle(NULL),
     m_pBeamNeedleFill(NULL),
     m_BeamNeedleTransform(D2D1::Matrix3x2F::Identity()),
-    m_pSourceGauge(NULL),
-    m_pSourceGaugeFill(NULL),
-    m_SourceGaugeTransform(D2D1::Matrix3x2F::Identity()),
     m_pPanelOutline(NULL),
     m_pPanelOutlineStroke(NULL) {
 }
@@ -29,7 +26,6 @@ AudioPanel::~AudioPanel() {
 /// Implied bits per pixel is 32
 /// <param name="hWnd">window to draw to</param>
 /// <param name="pD2DFactory">already created D2D factory object</param>
-/// <param name="energyToDisplay">Number of energy samples to display at any given time.</param>
 /// <returns>S_OK on success, otherwise failure code.</returns>
 HRESULT AudioPanel::Initialize(const HWND hWnd, ID2D1Factory* pD2DFactory) {
     if (NULL == pD2DFactory) {
@@ -67,10 +63,6 @@ HRESULT AudioPanel::Draw() {
     m_pRenderTarget->FillGeometry(m_pBeamNeedle, m_pBeamNeedleFill, NULL);
     m_pRenderTarget->SetTransform(m_RenderTargetTransform);
 
-    // Draw sound source gauge
-    m_pSourceGaugeFill->SetTransform(m_SourceGaugeTransform);
-    m_pRenderTarget->FillGeometry(m_pSourceGauge, m_pSourceGaugeFill, NULL);
-
     // Draw panel outline
     m_pRenderTarget->DrawGeometry(m_pPanelOutline, m_pPanelOutlineStroke, 0.001f);
             
@@ -93,25 +85,6 @@ void AudioPanel::SetBeam(const float & beamAngle) {
     m_BeamNeedleTransform = D2D1::Matrix3x2F::Rotation(-beamAngle, D2D1::Point2F(0.5f,0.0f));
 }
 
-void AudioPanel::SetSoundSource(const float & soundSourceAngle, const float & soundSourceConfidence) {
-    if (m_pRenderTarget == NULL) {
-        return;
-    }
-
-    // Maximum possible confidence corresponds to this gradient width
-    const float cMinGradientWidth = 0.04f;
-
-    // Set width of mark based on confidence.
-    // A confidence of 0 would give us a gradient that fills whole area diffusely.
-    // A confidence of 1 would give us the narrowest allowed gradient width.
-    float width = max((1 - soundSourceConfidence), cMinGradientWidth);
-
-    // Update the gradient representing sound source position to reflect confidence
-    CreateSourceGaugeFill(width);
-
-    m_SourceGaugeTransform = D2D1::Matrix3x2F::Rotation(-soundSourceAngle, D2D1::Point2F(0.5f,0.0f));
-}
-
 /// Dispose of Direct2d resources.
 void AudioPanel::DiscardResources() {
     SafeRelease(m_pRenderTarget);
@@ -119,8 +92,6 @@ void AudioPanel::DiscardResources() {
     SafeRelease(m_pBeamGaugeFill);
     SafeRelease(m_pBeamNeedle);
     SafeRelease(m_pBeamNeedleFill);
-    SafeRelease(m_pSourceGauge);
-    SafeRelease(m_pSourceGaugeFill);
     SafeRelease(m_pPanelOutline);
     SafeRelease(m_pPanelOutlineStroke);
 }
@@ -155,11 +126,7 @@ HRESULT AudioPanel::EnsureResources() {
             hr = CreateBeamGauge();
 
             if (SUCCEEDED(hr)) {
-                hr = CreateSourceGauge();
-
-                if (SUCCEEDED(hr)) {
-                    hr = CreatePanelOutline();
-                }
+                hr = CreatePanelOutline();
             }
         }
     }
@@ -273,72 +240,6 @@ HRESULT AudioPanel::CreateBeamGaugeNeedle() {
         SafeRelease(pGeometrySink);
     }
 
-    return hr;
-}
-
-/// Create gauge (with position cloud) used to display sound source angle.
-/// <returns>S_OK on success, otherwise failure code.</returns>
-HRESULT AudioPanel::CreateSourceGauge() {
-    HRESULT hr = m_pD2DFactory->CreatePathGeometry(&m_pSourceGauge);
-
-    // Create gauge background shape
-    if (SUCCEEDED(hr)) {
-        ID2D1GeometrySink *pGeometrySink = NULL;
-        hr = m_pSourceGauge->Open(&pGeometrySink);
-
-        if (SUCCEEDED(hr)) {
-            pGeometrySink->BeginFigure(D2D1::Point2F(0.1270f,0.3021f), D2D1_FIGURE_BEGIN_FILLED);
-            pGeometrySink->AddLine(D2D1::Point2F(0.1503f,0.2832f));
-            pGeometrySink->AddArc(D2D1::ArcSegment(D2D1::Point2F(0.8497f,0.2832f), D2D1::SizeF(0.45f,0.45f), 102, D2D1_SWEEP_DIRECTION_COUNTER_CLOCKWISE, D2D1_ARC_SIZE_SMALL));
-            pGeometrySink->AddLine(D2D1::Point2F(0.8730f,0.3021f));
-            pGeometrySink->AddArc(D2D1::ArcSegment(D2D1::Point2F(0.1270f,0.3021f), D2D1::SizeF(0.48f,0.48f), 102, D2D1_SWEEP_DIRECTION_CLOCKWISE, D2D1_ARC_SIZE_SMALL));
-            pGeometrySink->EndFigure(D2D1_FIGURE_END_CLOSED);
-            hr = pGeometrySink->Close();
-
-            // Create gauge background brush
-            if (SUCCEEDED(hr)) {
-                hr = CreateSourceGaugeFill(0.1f);
-            }
-        }
-
-        SafeRelease(pGeometrySink);
-    }
-
-    return hr;
-}
-
-/// Create gradient used to represent sound source confidence, with the
-/// specified width.
-/// <param name="width">Width of gradient, specified in [0.0,1.0] interval.</param>
-/// <returns>S_OK on success, otherwise failure code.</returns>
-HRESULT AudioPanel::CreateSourceGaugeFill(const float & width) {
-    HRESULT hr = S_OK;
-
-    float halfWidth = width / 2;
-    ID2D1GradientStopCollection *pGradientStops = NULL;
-    D2D1_GRADIENT_STOP gradientStops[5];
-    gradientStops[0].color = D2D1::ColorF(D2D1::ColorF::White, 1);
-    gradientStops[0].position = 0.0f;
-    gradientStops[1].color = D2D1::ColorF(D2D1::ColorF::White, 1);
-    gradientStops[1].position = max(0.5f - halfWidth, 0.0f);
-    gradientStops[2].color = D2D1::ColorF(D2D1::ColorF::BlueViolet, 1);
-    gradientStops[2].position = 0.5f;
-    gradientStops[3].color = D2D1::ColorF(D2D1::ColorF::White, 1);
-    gradientStops[3].position = min(0.5f + halfWidth, 1.0f);
-    gradientStops[4].color = D2D1::ColorF(D2D1::ColorF::White, 1);
-    gradientStops[4].position = 1.0f;
-    hr = m_pRenderTarget->CreateGradientStopCollection(
-        gradientStops,
-        5,
-        &pGradientStops
-       );
-
-    if (SUCCEEDED(hr)) {
-        SafeRelease(m_pSourceGaugeFill);
-        hr = m_pRenderTarget->CreateLinearGradientBrush(D2D1::LinearGradientBrushProperties(D2D1::Point2F(0.0f,0.5f), D2D1::Point2F(1.0f,0.5f)), pGradientStops, &m_pSourceGaugeFill);
-    }
-
-    SafeRelease(pGradientStops);
     return hr;
 }
 
