@@ -18,7 +18,6 @@
 // For Kinect SDK APIs
 #include <NuiApi.h>
 
-
 // Format of Kinect audio stream
 static const WORD       AudioFormat = WAVE_FORMAT_PCM;
 
@@ -37,11 +36,9 @@ static const WORD       AudioBlockAlign = 2;
 // Bits per audio sample in Kinect audio stream
 static const WORD       AudioBitsPerSample = 16;
 
-/// <summary>
 /// IMediaBuffer implementation for a statically allocated buffer.
-/// </summary>
-class CStaticMediaBuffer : public IMediaBuffer
-{
+
+class CStaticMediaBuffer : public IMediaBuffer {
 public:
     // Constructor
     CStaticMediaBuffer() : m_dataLength(0) {}
@@ -51,20 +48,17 @@ public:
     STDMETHODIMP_(ULONG) Release() { return 1; }
     STDMETHODIMP QueryInterface(REFIID riid, void **ppv)
     {
-        if (riid == IID_IUnknown)
-        {
+        if (riid == IID_IUnknown) {
             AddRef();
             *ppv = (IUnknown*)this;
             return NOERROR;
         }
-        else if (riid == IID_IMediaBuffer)
-        {
+        else if (riid == IID_IMediaBuffer) {
             AddRef();
             *ppv = (IMediaBuffer*)this;
             return NOERROR;
         }
-        else
-        {
+        else {
             return E_NOINTERFACE;
         }
     }
@@ -72,20 +66,16 @@ public:
     // IMediaBuffer methods
     STDMETHODIMP SetLength(DWORD length) {m_dataLength = length; return NOERROR;}
     STDMETHODIMP GetMaxLength(DWORD *pMaxLength) {*pMaxLength = sizeof(m_pData); return NOERROR;}
-    STDMETHODIMP GetBufferAndLength(BYTE **ppBuffer, DWORD *pLength)
-    {
-        if (ppBuffer)
-        {
+    STDMETHODIMP GetBufferAndLength(BYTE **ppBuffer, DWORD *pLength) {
+        if (ppBuffer) {
             *ppBuffer = m_pData;
         }
-        if (pLength)
-        {
+        if (pLength) {
             *pLength = m_dataLength;
         }
         return NOERROR;
     }
-    void Init(ULONG ulData)
-    {
+    void Init(ULONG ulData) {
         m_dataLength = ulData;
     }
 
@@ -97,35 +87,25 @@ protected:
     ULONG m_dataLength;
 };
 
-/// <summary>
 /// Main application class for AudioBasics sample.
-/// </summary>
-class CAudioBasics
-{
+class CAudioBasics {
 public:
-    /// <summary>
+    
     /// Constructor
-    /// </summary>
     CAudioBasics();
 
-    /// <summary>
     /// Destructor
-    /// </summary>
     ~CAudioBasics();
 
-    /// <summary>
     /// Handles window messages, passes most to the class instance to handle
-    /// </summary>
     /// <param name="hWnd">window message is for</param>
     /// <param name="uMsg">message</param>
     /// <param name="wParam">message data</param>
     /// <param name="lParam">additional message data</param>
     /// <returns>result of message processing</returns>
     static LRESULT CALLBACK MessageRouter(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
-
-    /// <summary>
+    
     /// Handle windows messages for a class instance
-    /// </summary>
     /// <param name="hWnd">window message is for</param>
     /// <param name="uMsg">message</param>
     /// <param name="wParam">message data</param>
@@ -133,9 +113,7 @@ public:
     /// <returns>result of message processing</returns>
     LRESULT CALLBACK        DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
 
-    /// <summary>
     /// Creates the main window and begins processing
-    /// </summary>
     /// <param name="hInstance">handle to the application instance</param>
     /// <param name="nCmdShow">whether to display minimized, maximized, or normally</param>
     int                     Run(HINSTANCE hInstance, int nCmdShow);
@@ -215,35 +193,22 @@ private:
 
     // Last time energy visualization was rendered to screen.
     DWORD                   m_dwLastEnergyRefreshTime;        
-
-
-    /// <summary>
+    
     /// Create the first connected Kinect found.
-    /// </summary>
     /// <returns>S_OK on success, otherwise failure code.</returns>
     HRESULT                 CreateFirstConnected();
-
-    /// <summary>
+    
     /// Initialize Kinect audio capture/control objects.
-    /// </summary>
-    /// <returns>
-    /// <para>S_OK on success, otherwise failure code.</para>
-    /// </returns>
+    /// <returns> S_OK on success, otherwise failure code.</returns>
     HRESULT                 InitializeAudioSource();
 
-    /// <summary>
     /// Capture new audio data.
-    /// </summary>
     void                    ProcessAudio();
 
-    /// <summary>
     /// Display latest audio data.
-    /// </summary>
     void                    Update();
 
-    /// <summary>
     /// Set the status bar message.
-    /// </summary>
     /// <param name="szMessage">message to display.</param>
     void                    SetStatusMessage(WCHAR* szMessage);
 };
