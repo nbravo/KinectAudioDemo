@@ -384,37 +384,6 @@ void CAudioBasics::ProcessAudio() {
 
 /// Display latest audio data.
 void CAudioBasics::Update() {
-    // Calculate how many energy samples we need to advance since the last update in order to
-    // have a smooth animation effect.
-    DWORD previousRefreshTime = m_dwLastEnergyRefreshTime;
-    DWORD now = GetTickCount();
-    m_dwLastEnergyRefreshTime  = now;
-
-    // No need to refresh if there is no new energy available to render
-    if(m_iNewEnergyAvailable <= 0) {
-        return;
-    }
-
-    if (previousRefreshTime != NULL) {
-        float energyToAdvance = m_fltEnergyError +(((now - previousRefreshTime) * AudioSamplesPerSecond/(float)1000.0) / iAudioSamplesPerEnergySample); 
-        int energySamplesToAdvance = min(m_iNewEnergyAvailable, (int)(energyToAdvance));
-        m_fltEnergyError = energyToAdvance - energySamplesToAdvance;
-        m_iEnergyRefreshIndex = (m_iEnergyRefreshIndex + energySamplesToAdvance) % iEnergyBufferLength;
-        m_iNewEnergyAvailable -= energySamplesToAdvance;
-    }
-    // Copy energy samples into buffer to be displayed, taking into account that energy
-    // wraps around in a circular buffer.
-    int baseIndex = (m_iEnergyRefreshIndex + iEnergyBufferLength - iEnergySamplesToDisplay) % iEnergyBufferLength;
-    int samplesUntilEnd = iEnergyBufferLength - baseIndex;
-    if(samplesUntilEnd>iEnergySamplesToDisplay) {
-        memcpy_s(m_rgfltEnergyDisplayBuffer, iEnergySamplesToDisplay*sizeof(float),m_rgfltEnergyBuffer + baseIndex, iEnergySamplesToDisplay*sizeof(float));
-    }
-    else {
-        int samplesFromBeginning = iEnergySamplesToDisplay-samplesUntilEnd;
-        memcpy_s(m_rgfltEnergyDisplayBuffer, iEnergySamplesToDisplay*sizeof(float), m_rgfltEnergyBuffer + baseIndex, samplesUntilEnd*sizeof(float));
-        memcpy_s(m_rgfltEnergyDisplayBuffer + samplesUntilEnd, (iEnergySamplesToDisplay - samplesUntilEnd)*sizeof(float), m_rgfltEnergyBuffer, samplesFromBeginning*sizeof(float));
-    }
-
     m_pAudioPanel->Draw();
 }
 
