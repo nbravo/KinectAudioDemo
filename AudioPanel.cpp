@@ -24,8 +24,7 @@ AudioPanel::AudioPanel() :
     m_pSourceGaugeFill(NULL),
     m_SourceGaugeTransform(D2D1::Matrix3x2F::Identity()),
     m_pPanelOutline(NULL),
-    m_pPanelOutlineStroke(NULL)
-{
+    m_pPanelOutlineStroke(NULL) {
 }
 
 /// Destructor
@@ -64,7 +63,7 @@ HRESULT AudioPanel::Draw() {
     // create the resources for this draw device. They will be recreated if previously lost.
     HRESULT hr = EnsureResources();
 
-    if ( FAILED(hr) ) {
+    if (FAILED(hr)) {
         return hr;
     }
     
@@ -155,9 +154,7 @@ void AudioPanel::UpdateEnergy(const float *pEnergy, const UINT energyLength) {
     }
 }
 
-
 /// Dispose of Direct2d resources.
-
 void AudioPanel::DiscardResources() {
     if (m_pEnergyBackground != NULL) {
         delete []m_pEnergyBackground;
@@ -178,9 +175,7 @@ void AudioPanel::DiscardResources() {
     SafeRelease(m_pPanelOutlineStroke);
 }
 
-
 /// Ensure necessary Direct2d resources are created
-
 /// <returns>indicates success or failure</returns>
 HRESULT AudioPanel::EnsureResources() {
     HRESULT hr = S_OK;
@@ -204,7 +199,7 @@ HRESULT AudioPanel::EnsureResources() {
             rtProps,
             D2D1::HwndRenderTargetProperties(m_hWnd, size),
             &m_pRenderTarget
-            );
+           );
 
         if (SUCCEEDED(hr)) {
             hr = CreateEnergyDisplay();
@@ -223,16 +218,14 @@ HRESULT AudioPanel::EnsureResources() {
         }
     }
 
-    if ( FAILED(hr) ) {
+    if (FAILED(hr)) {
         DiscardResources();
     }
 
     return hr;
 }
 
-
 /// Create oscilloscope display for audio energy data.
-
 /// <returns>S_OK on success, otherwise failure code.</returns>
 HRESULT AudioPanel::CreateEnergyDisplay() {
     const int cBytesPerPixel = 4;
@@ -260,9 +253,9 @@ HRESULT AudioPanel::CreateEnergyDisplay() {
 
     hr = m_pRenderTarget->CreateBitmap(
                 size, 
-                D2D1::BitmapProperties( D2D1::PixelFormat( DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_IGNORE) ),
+                D2D1::BitmapProperties(D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_IGNORE)),
                 &m_pEnergyDisplay 
-                );
+               );
 
     if (SUCCEEDED(hr)) {
         m_pEnergyDisplay->CopyFromMemory(NULL, m_pEnergyBackground, m_uiEnergyBackgroundStride);
@@ -271,9 +264,7 @@ HRESULT AudioPanel::CreateEnergyDisplay() {
     return hr;
 }
 
-
 /// Create gauge (with needle) used to display beam angle.
-
 /// <returns>S_OK on success, otherwise failure code.</returns>
 HRESULT AudioPanel::CreateBeamGauge() {
     HRESULT hr = m_pD2DFactory->CreatePathGeometry(&m_pBeamGauge);
@@ -308,7 +299,7 @@ HRESULT AudioPanel::CreateBeamGauge() {
                     gradientStops,
                     4,
                     &pGradientStops
-                    );
+                   );
 
                 if (SUCCEEDED(hr)) {
                     hr = m_pRenderTarget->CreateRadialGradientBrush(D2D1::RadialGradientBrushProperties(D2D1::Point2F(0.5f,0.0f), D2D1::Point2F(0.0f,0.0f), 1.0f, 1.0f), pGradientStops, &m_pBeamGaugeFill);
@@ -329,9 +320,7 @@ HRESULT AudioPanel::CreateBeamGauge() {
     return hr;
 }
 
-
 /// Create gauge needle used to display beam angle.
-
 /// <returns>S_OK on success, otherwise failure code.</returns>
 HRESULT AudioPanel::CreateBeamGaugeNeedle() {
     HRESULT hr = m_pD2DFactory->CreatePathGeometry(&m_pBeamNeedle);
@@ -364,7 +353,7 @@ HRESULT AudioPanel::CreateBeamGaugeNeedle() {
                     gradientStops,
                     4,
                     &pGradientStops
-                    );
+                   );
 
                 if (SUCCEEDED(hr)) {
                     hr = m_pRenderTarget->CreateLinearGradientBrush(D2D1::LinearGradientBrushProperties(D2D1::Point2F(0.5f,0.0f), D2D1::Point2F(0.5f,1.0f)), pGradientStops, &m_pBeamNeedleFill);
@@ -380,9 +369,7 @@ HRESULT AudioPanel::CreateBeamGaugeNeedle() {
     return hr;
 }
 
-
 /// Create gauge (with position cloud) used to display sound source angle.
-
 /// <returns>S_OK on success, otherwise failure code.</returns>
 HRESULT AudioPanel::CreateSourceGauge() {
     HRESULT hr = m_pD2DFactory->CreatePathGeometry(&m_pSourceGauge);
@@ -413,13 +400,9 @@ HRESULT AudioPanel::CreateSourceGauge() {
     return hr;
 }
 
-
 /// Create gradient used to represent sound source confidence, with the
 /// specified width.
-
-/// <param name="width">
-/// Width of gradient, specified in [0.0,1.0] interval.
-/// </param>
+/// <param name="width">Width of gradient, specified in [0.0,1.0] interval.</param>
 /// <returns>S_OK on success, otherwise failure code.</returns>
 HRESULT AudioPanel::CreateSourceGaugeFill(const float & width) {
     HRESULT hr = S_OK;
@@ -441,7 +424,7 @@ HRESULT AudioPanel::CreateSourceGaugeFill(const float & width) {
         gradientStops,
         5,
         &pGradientStops
-        );
+       );
 
     if (SUCCEEDED(hr)) {
         SafeRelease(m_pSourceGaugeFill);
@@ -452,9 +435,7 @@ HRESULT AudioPanel::CreateSourceGaugeFill(const float & width) {
     return hr;
 }
 
-
 /// Create outline that frames both gauges and energy display into a cohesive panel.
-
 /// <returns>S_OK on success, otherwise failure code.</returns>
 HRESULT AudioPanel::CreatePanelOutline() {
     HRESULT hr = m_pD2DFactory->CreatePathGeometry(&m_pPanelOutline);
