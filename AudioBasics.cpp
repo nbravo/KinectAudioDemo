@@ -12,6 +12,18 @@
 #define _USE_MATH_DEFINES
 #include <math.h>
 
+#include <stdio.h>
+
+#include <Windows.h>
+#include <iostream>
+#include <sstream>
+#define DBOUT( s )            \
+{                             \
+   std::wostringstream os_;    \
+   os_ << s;                   \
+   OutputDebugString( os_.str().c_str() );  \
+}
+
 /// Entry point for the application
 /// <param name="hInstance">handle to the application instance</param>
 /// <param name="hPrevInstance">always 0</param>
@@ -337,8 +349,13 @@ void CAudioBasics::ProcessAudio() {
             m_pNuiAudioSource->GetPosition(&sourceAngle, &sourceConfidence);
 
             // Convert angles to degrees and set values in audio panel
-            m_pAudioPanel->SetBeam(static_cast<float>((180.0 * beamAngle) / M_PI));
-            m_pAudioPanel->SetSoundSource(static_cast<float>((180.0 * sourceAngle) / M_PI), static_cast<float>(sourceConfidence));
+            float beamAngleDegrees = static_cast<float>((180.0 * beamAngle) / M_PI);
+            float sourceAngleDegrees = static_cast<float>((180.0 * sourceAngle) / M_PI);
+            m_pAudioPanel->SetBeam(beamAngleDegrees);
+            m_pAudioPanel->SetSoundSource(sourceAngleDegrees, static_cast<float>(sourceConfidence));
+
+            DBOUT("Beam Angle: " << beamAngleDegrees << "\n");
+            DBOUT("Source Angle: " << sourceAngleDegrees << "\n");
         }
 
     } while (outputBuffer.dwStatus & DMO_OUTPUT_DATA_BUFFERF_INCOMPLETE);

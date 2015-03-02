@@ -37,7 +37,6 @@ static const WORD       AudioBlockAlign = 2;
 static const WORD       AudioBitsPerSample = 16;
 
 /// IMediaBuffer implementation for a statically allocated buffer.
-
 class CStaticMediaBuffer : public IMediaBuffer {
 public:
     // Constructor

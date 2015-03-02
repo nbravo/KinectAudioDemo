@@ -15,7 +15,6 @@ public:
     AudioPanel();
 
     virtual ~AudioPanel();
-
      
     /// Set the window to draw to as well as the amount of energy to expect to have to display.
     /// <param name="hWnd">window to draw to.</param>
@@ -31,7 +30,6 @@ public:
     /// Update the beam angle being displayed in panel.
     /// <param name="beamAngle">new beam angle to display.</param>
     void SetBeam(const float & beamAngle);
-
      
     /// Update the sound source angle and confidence being displayed in panel.
     /// <param name="soundSourceAngle">new sound source angle to display.</param>
@@ -59,7 +57,6 @@ private:
 
     /// Dispose of Direct2d resources.
     void DiscardResources( );
-
      
     /// Ensure necessary Direct2d resources are created.
     /// <returns>S_OK on success, otherwise failure code.</returns>
