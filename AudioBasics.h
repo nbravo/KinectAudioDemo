@@ -131,17 +131,6 @@ private:
     // Time interval, in milliseconds, for timer that drives energy stream display.
     static const int        iEnergyRefreshTimerInterval = 10;
 
-    // Number of audio samples captured from Kinect audio stream accumulated into a single
-    // energy measurement that will get displayed.
-    static const int        iAudioSamplesPerEnergySample = 40;
-
-    // Number of energy samples that will be visible in display at any given time.
-    static const int        iEnergySamplesToDisplay = 780;
-
-    // Number of energy samples that will be stored in the circular buffer.
-    // Always keep it higher than the energy display length to avoid overflow.
-    static const int        iEnergyBufferLength = 1000;
-
     // Main application dialog window.
     HWND                    m_hWnd;
 
@@ -166,34 +155,6 @@ private:
     // Buffer to hold captured audio data.
     CStaticMediaBuffer      m_csmCaptureBuffer;
 
-    // Buffer used to store audio stream energy data as we read audio.
-    float                   m_rgfltEnergyBuffer[iEnergyBufferLength];
-
-    // Buffer used to store audio stream energy data ready to be displayed.
-    float                   m_rgfltEnergyDisplayBuffer[iEnergySamplesToDisplay];
-
-    // Sum of squares of audio samples being accumulated to compute the next energy value.
-    float                   m_fltAccumulatedSquareSum;
-
-    // Error between time slice we wanted to display and time slice that we ended up
-    // displaying, given that we have to display in integer pixels.
-    float					m_fltEnergyError;
-
-    // Number of audio samples accumulated so far to compute the next energy value.
-    int                     m_iAccumulatedSampleCount;
-
-    // Index of next element available in audio energy buffer.
-    int                     m_iEnergyIndex;
-
-    // Number of newly calculated audio stream energy values that have not yet been displayed.
-    int                     m_iNewEnergyAvailable;
-
-    // Index of first energy element that has never (yet) been displayed to screen.
-    int                     m_iEnergyRefreshIndex;
-
-    // Last time energy visualization was rendered to screen.
-    DWORD                   m_dwLastEnergyRefreshTime;        
-    
     /// Create the first connected Kinect found.
     /// <returns>S_OK on success, otherwise failure code.</returns>
     HRESULT                 CreateFirstConnected();

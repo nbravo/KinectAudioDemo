@@ -40,16 +40,7 @@ CAudioBasics::CAudioBasics() :
     m_pNuiSensor(NULL),
     m_pNuiAudioSource(NULL),
     m_pDMO(NULL),
-    m_pPropertyStore(NULL),
-    m_fltAccumulatedSquareSum(0.0),
-    m_fltEnergyError(0.0),
-    m_iAccumulatedSampleCount(0),
-    m_iEnergyIndex(0),
-    m_iEnergyRefreshIndex(0),
-    m_iNewEnergyAvailable(0),
-    m_dwLastEnergyRefreshTime(NULL) {
-    ZeroMemory(m_rgfltEnergyBuffer, sizeof(m_rgfltEnergyBuffer));
-    ZeroMemory(m_rgfltEnergyDisplayBuffer, sizeof(m_rgfltEnergyDisplayBuffer));
+    m_pPropertyStore(NULL) {
 }
 
  /// Destructor
@@ -348,35 +339,6 @@ void CAudioBasics::ProcessAudio() {
             // Convert angles to degrees and set values in audio panel
             m_pAudioPanel->SetBeam(static_cast<float>((180.0 * beamAngle) / M_PI));
             m_pAudioPanel->SetSoundSource(static_cast<float>((180.0 * sourceAngle) / M_PI), static_cast<float>(sourceConfidence));
-
-            // Calculate energy from audio
-            for (UINT i = 0; i < cbProduced; i += 2) {
-                // compute the sum of squares of audio samples that will get accumulated
-                // into a single energy value.
-                short audioSample = static_cast<short>(pProduced[i] | (pProduced[i+1] << 8));
-                m_fltAccumulatedSquareSum += audioSample * audioSample;
-                ++m_iAccumulatedSampleCount;
-
-                if (m_iAccumulatedSampleCount < iAudioSamplesPerEnergySample) {
-                    continue;
-                }
-
-                // Each energy value will represent the logarithm of the mean of the
-                // sum of squares of a group of audio samples.
-                float meanSquare = m_fltAccumulatedSquareSum / iAudioSamplesPerEnergySample;
-                float amplitude = log(meanSquare) / log(static_cast<float>(INT_MAX));
-
-                // Truncate portion of signal below noise floor
-                float amplitudeAboveNoise = max(0.0f, amplitude - cEnergyNoiseFloor);
-
-                // Renormalize signal above noise floor to [0,1] range.
-                m_rgfltEnergyBuffer[m_iEnergyIndex] = amplitudeAboveNoise / (1 - cEnergyNoiseFloor);
-                m_iNewEnergyAvailable++;
-                m_iEnergyIndex = (m_iEnergyIndex + 1) % iEnergyBufferLength;
-
-                m_fltAccumulatedSquareSum = 0;
-                m_iAccumulatedSampleCount = 0;
-            }
         }
 
     } while (outputBuffer.dwStatus & DMO_OUTPUT_DATA_BUFFERF_INCOMPLETE);
