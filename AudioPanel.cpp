@@ -7,14 +7,6 @@ AudioPanel::AudioPanel() :
     m_pD2DFactory(NULL), 
     m_pRenderTarget(NULL),
     m_RenderTargetTransform(D2D1::Matrix3x2F::Identity()),
-    m_uiEnergyDisplayWidth(0),
-    m_uiEnergyDisplayHeight(0),
-    m_pEnergyBackground(NULL),
-    m_uiEnergyBackgroundStride(0),
-    m_pEnergyForeground(NULL),
-    m_uiEnergyForegroundStride(0),
-    m_pEnergyDisplay(NULL),
-    m_EnergyDisplayPosition(D2D1::RectF()),
     m_pBeamGauge(NULL),
     m_pBeamGaugeFill(NULL),
     m_pBeamNeedle(NULL),
@@ -39,7 +31,7 @@ AudioPanel::~AudioPanel() {
 /// <param name="pD2DFactory">already created D2D factory object</param>
 /// <param name="energyToDisplay">Number of energy samples to display at any given time.</param>
 /// <returns>S_OK on success, otherwise failure code.</returns>
-HRESULT AudioPanel::Initialize(const HWND hWnd, ID2D1Factory* pD2DFactory, const UINT energyToDisplay) {
+HRESULT AudioPanel::Initialize(const HWND hWnd, ID2D1Factory* pD2DFactory) {
     if (NULL == pD2DFactory) {
         return E_INVALIDARG;
     }
@@ -50,9 +42,6 @@ HRESULT AudioPanel::Initialize(const HWND hWnd, ID2D1Factory* pD2DFactory, const
     m_pD2DFactory = pD2DFactory;
 
     m_pD2DFactory->AddRef();
-
-    m_uiEnergyDisplayWidth = energyToDisplay;
-    m_uiEnergyDisplayHeight = m_uiEnergyDisplayWidth / 4;
 
     return S_OK;
 }
@@ -71,9 +60,6 @@ HRESULT AudioPanel::Draw() {
     m_pRenderTarget->SetTransform(m_RenderTargetTransform);
 
     m_pRenderTarget->Clear(D2D1::ColorF(D2D1::ColorF::White));
-
-    // Draw energy display
-    m_pRenderTarget->DrawBitmap(m_pEnergyDisplay, m_EnergyDisplayPosition);
 
     // Draw audio beam gauge
     m_pRenderTarget->FillGeometry(m_pBeamGauge, m_pBeamGaugeFill, NULL);
@@ -126,45 +112,9 @@ void AudioPanel::SetSoundSource(const float & soundSourceAngle, const float & so
     m_SourceGaugeTransform = D2D1::Matrix3x2F::Rotation(-soundSourceAngle, D2D1::Point2F(0.5f,0.0f));
 }
 
-void AudioPanel::UpdateEnergy(const float *pEnergy, const UINT energyLength) {
-    if (m_pRenderTarget == NULL) {
-        return;
-    }
-
-    // Clear whole display to background color
-    m_pEnergyDisplay->CopyFromMemory(NULL, m_pEnergyBackground, m_uiEnergyBackgroundStride);
-
-    // Draw each energy sample as a centered vertical bar, where the length of each bar is
-    // proportional to the amount of energy it represents.
-    // Time advances from left to right, with current time represented by the rightmost bar.
-    for (UINT i = 0; i < min(energyLength, m_uiEnergyDisplayWidth); ++i) {
-        const int cHalfImageHeight = m_uiEnergyDisplayHeight / 2;
-
-        // Each bar has a minimum height of 1 (to get a steady signal down the middle) and a maximum height
-        // equal to the bitmap height.
-        int barHeight = static_cast<int>(max(1.0f, (pEnergy[i] * m_uiEnergyDisplayHeight)));
-
-        // Center bar vertically on image
-        int top = cHalfImageHeight - (barHeight / 2);
-        int bottom = top + barHeight;
-        D2D1_RECT_U barRect = D2D1::RectU(i, top, i + 1, bottom);
-
-        // Draw bar in foreground color
-        m_pEnergyDisplay->CopyFromMemory(&barRect, m_pEnergyForeground, m_uiEnergyForegroundStride);
-    }
-}
-
 /// Dispose of Direct2d resources.
 void AudioPanel::DiscardResources() {
-    if (m_pEnergyBackground != NULL) {
-        delete []m_pEnergyBackground;
-    }
-    if (m_pEnergyForeground != NULL) {
-        delete []m_pEnergyForeground;
-    }
-    
     SafeRelease(m_pRenderTarget);
-    SafeRelease(m_pEnergyDisplay);
     SafeRelease(m_pBeamGauge);
     SafeRelease(m_pBeamGaugeFill);
     SafeRelease(m_pBeamNeedle);
@@ -202,17 +152,13 @@ HRESULT AudioPanel::EnsureResources() {
            );
 
         if (SUCCEEDED(hr)) {
-            hr = CreateEnergyDisplay();
+            hr = CreateBeamGauge();
 
             if (SUCCEEDED(hr)) {
-                hr = CreateBeamGauge();
+                hr = CreateSourceGauge();
 
                 if (SUCCEEDED(hr)) {
-                    hr = CreateSourceGauge();
-
-                    if (SUCCEEDED(hr)) {
-                        hr = CreatePanelOutline();
-                    }
+                    hr = CreatePanelOutline();
                 }
             }
         }
@@ -220,45 +166,6 @@ HRESULT AudioPanel::EnsureResources() {
 
     if (FAILED(hr)) {
         DiscardResources();
-    }
-
-    return hr;
-}
-
-/// Create oscilloscope display for audio energy data.
-/// <returns>S_OK on success, otherwise failure code.</returns>
-HRESULT AudioPanel::CreateEnergyDisplay() {
-    const int cBytesPerPixel = 4;
-    const int cMaxPixelChannelIntensity = 0xff;
-
-    D2D1_SIZE_U size = D2D1::SizeU(m_uiEnergyDisplayWidth, m_uiEnergyDisplayHeight);
-    HRESULT hr = S_OK;
-
-    // Allocate background and set to white
-    m_uiEnergyBackgroundStride = cBytesPerPixel * m_uiEnergyDisplayWidth;
-    int numBackgroundBytes = m_uiEnergyBackgroundStride * m_uiEnergyDisplayHeight;
-    m_pEnergyBackground = new BYTE[numBackgroundBytes];
-    memset(m_pEnergyBackground, cMaxPixelChannelIntensity, numBackgroundBytes);
-
-    // Allocate foreground and set to blue/violet color
-    m_uiEnergyForegroundStride = cBytesPerPixel;
-    m_pEnergyForeground = new BYTE[cBytesPerPixel * m_uiEnergyDisplayHeight];
-    UINT *pPixels = reinterpret_cast<UINT*>(m_pEnergyForeground);
-    for (UINT iPixel = 0; iPixel < m_uiEnergyDisplayHeight; ++iPixel) {
-        pPixels[iPixel] = 0x8A2BE2;
-    }
-
-    // Specify layout position for energy display
-    m_EnergyDisplayPosition = D2D1::RectF(0.13f, 0.0353f, 0.87f, 0.2203f);
-
-    hr = m_pRenderTarget->CreateBitmap(
-                size, 
-                D2D1::BitmapProperties(D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_IGNORE)),
-                &m_pEnergyDisplay 
-               );
-
-    if (SUCCEEDED(hr)) {
-        m_pEnergyDisplay->CopyFromMemory(NULL, m_pEnergyBackground, m_uiEnergyBackgroundStride);
     }
 
     return hr;

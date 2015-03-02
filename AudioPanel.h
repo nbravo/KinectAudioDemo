@@ -22,7 +22,7 @@ public:
     /// <param name="pD2DFactory">already created D2D factory object.</param>
     /// <param name="energyToDisplay">Number of energy samples to display at any given time.</param>
     /// <returns>S_OK on success, otherwise failure code.</returns>
-    HRESULT Initialize(const HWND hwnd, ID2D1Factory* pD2DFactory, UINT energyToDisplay);
+    HRESULT Initialize(const HWND hwnd, ID2D1Factory* pD2DFactory);
      
     /// Draws audio panel.
     /// <returns>S_OK on success, otherwise failure code.</returns>
@@ -38,11 +38,6 @@ public:
     /// <param name="soundSourceConfidence">new sound source confidence to display.</param>
     void SetSoundSource(const float & soundSourceAngle, const float & soundSourceConfidence);
 
-    /// Update the audio energy being displayed in panel.
-    /// <param name="pEnergy">new energy buffer to render.</param>
-    /// <param name="energyLength">length of energy buffer to render.</param>
-    void UpdateEnergy(const float *pEnergy, const UINT energyLength);
-
 private:
     // Main application window
     HWND                        m_hWnd;
@@ -51,14 +46,6 @@ private:
     ID2D1Factory*               m_pD2DFactory;
     ID2D1HwndRenderTarget*      m_pRenderTarget;
     D2D_MATRIX_3X2_F            m_RenderTargetTransform;
-    UINT                        m_uiEnergyDisplayWidth;
-    UINT                        m_uiEnergyDisplayHeight;
-    BYTE*                       m_pEnergyBackground;
-    UINT                        m_uiEnergyBackgroundStride;
-    BYTE*                       m_pEnergyForeground;
-    UINT                        m_uiEnergyForegroundStride;
-    ID2D1Bitmap*                m_pEnergyDisplay;
-    D2D1_RECT_F                 m_EnergyDisplayPosition;
     ID2D1PathGeometry*          m_pBeamGauge;
     ID2D1RadialGradientBrush*   m_pBeamGaugeFill;
     ID2D1PathGeometry*          m_pBeamNeedle;
@@ -77,10 +64,6 @@ private:
     /// Ensure necessary Direct2d resources are created.
     /// <returns>S_OK on success, otherwise failure code.</returns>
     HRESULT EnsureResources();
-     
-    /// Create oscilloscope display for audio energy data.
-    /// <returns>S_OK on success, otherwise failure code.</returns>
-    HRESULT CreateEnergyDisplay();
 
     /// Create gauge used to display beam angle.
     /// <returns>S_OK on success, otherwise failure code.</returns>

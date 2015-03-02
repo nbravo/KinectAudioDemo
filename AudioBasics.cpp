@@ -161,7 +161,7 @@ LRESULT CALLBACK CAudioBasics::DlgProc(HWND hWnd, UINT message, WPARAM wParam, L
             // Create and initialize a new Direct2D image renderer (take a look at ImageRenderer.h)
             // We'll use this to draw the data we receive from the Kinect to the screen
             m_pAudioPanel = new AudioPanel();
-            HRESULT hr = m_pAudioPanel->Initialize(GetDlgItem(m_hWnd, IDC_AUDIOVIEW), m_pD2DFactory, iEnergySamplesToDisplay);
+            HRESULT hr = m_pAudioPanel->Initialize(GetDlgItem(m_hWnd, IDC_AUDIOVIEW), m_pD2DFactory);
             if (FAILED(hr)) {
                 SetStatusMessage(L"Failed to initialize the Direct2D draw device.");
                 break;
@@ -414,7 +414,6 @@ void CAudioBasics::Update() {
         memcpy_s(m_rgfltEnergyDisplayBuffer, iEnergySamplesToDisplay*sizeof(float), m_rgfltEnergyBuffer + baseIndex, samplesUntilEnd*sizeof(float));
         memcpy_s(m_rgfltEnergyDisplayBuffer + samplesUntilEnd, (iEnergySamplesToDisplay - samplesUntilEnd)*sizeof(float), m_rgfltEnergyBuffer, samplesFromBeginning*sizeof(float));
     }
-    m_pAudioPanel->UpdateEnergy(m_rgfltEnergyDisplayBuffer, iEnergySamplesToDisplay);
 
     m_pAudioPanel->Draw();
 }
